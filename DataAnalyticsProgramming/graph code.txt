@@ -1,0 +1,184 @@
+#city by number of reviews
+
+
+x=DAPVisualsdf['city'].value_counts()
+x=x.sort_values(ascending=False)
+x=x.iloc[0:20]
+plt.figure(figsize=(16,4))
+ax = sns.barplot(x.index, x.values, alpha=0.8)
+plt.title("Which city has the most reviews?")
+locs, labels = plt.xticks()
+plt.setp(labels, rotation=45)
+plt.ylabel('# businesses', fontsize=12)
+plt.xlabel('City', fontsize=12)
+
+#adding the text labels
+rects = ax.patches
+labels = x.values
+for rect, label in zip(rects, labels):
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2, height + 5, label, ha='center', va='bottom')
+
+plt.show()
+
+----------------
+#Number of restaurants by cities
+
+import plotly.express as px
+
+import plotly.graph_objects as go
+import numpy as np
+
+N = 1000
+t = np.linspace(0, 10, 100)
+y = np.sin(t)
+
+x=DAPVisualsdf['state'].value_counts()
+print("There are ",len(x)," different states data of restaurants")
+
+x=x.sort_values(ascending=False)
+x=x.iloc[0:20]
+
+
+#fig = px.scatter(x=x.index, y=x.values)
+fig = go.Figure(data=go.Scatter(x=x.index, y=x.values, mode='markers'))
+fig.show()
+
+
+--------------------------------
+#average views by user
+
+
+#https://python-graph-gallery.com/125-small-multiples-for-line-chart/  -- this is a goldmine
+# Initialize the figure
+plt.style.use('seaborn-darkgrid')
+# create a color palette
+palette = plt.get_cmap('Set1')
+plt.figure(figsize=(10,10))
+plt.suptitle("Checkins variation across time",fontsize=20)
+gridspec.GridSpec(3,3)
+plt.subplots_adjust(hspace=0.4)
+
+# multiple line plot
+num=0
+for column in DAPVisualsdf.drop('checkindate', axis=1):
+    num+=1
+    # Find the right spot on the plot
+    
+    if num==7:  # adjustment to fit sunday
+        plt.subplot2grid((3,3),(2,0),colspan=3)
+    else:
+        plt.subplot(3,3, num)
+    
+    # plot every groups, but discreet
+    for v in DAPVisualsdf.drop('checkindate', axis=1):
+        plt.plot(DAPVisualsdf['checkindate'], DAPVisualsdf[v], marker='', color='grey', linewidth=0.6, alpha=0.3)
+    # Plot the lineplot
+    plt.plot(DAPVisuals['checkindate'], DAPVisuals[column], marker='', color=palette(num), linewidth=2.4, alpha=0.9, label=column)
+    # Same limits for everybody!
+    plt.xlim(0,24)
+    plt.ylim(-2,260000)
+    # Not ticks everywhere
+    if num in range(4) :
+        plt.tick_params(labelbottom='off')
+    if num not in [1,4,7] :
+        plt.tick_params(labelleft='off')
+    # Add title
+    plt.title(column, loc='left', fontsize=12, fontweight=0, color=palette(num))
+
+
+-----------------------------------
+
+
+#5 star restuarant reviews
+
+#jon graph 5 star reviews
+
+import plotly.graph_objects as go
+labels = dfDAPVisuals_StateWithMax5Stars['state']
+values = dfDAPVisuals_StateWithMax5Stars['n5stars']
+# pull is given as a fraction of the pie radius
+fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.1, 0, 0, 0])])
+fig.update_layout(title_text="5 star reviews by state")
+fig.show()
+
+
+
+------------------------
+
+#star rating distribution by restaurants
+
+part 1
+
+import plotly.graph_objects as go
+
+x = DAPVisualsdf['stars'].value_counts()
+y = x.sort_index()
+z = ['1 star','1.5 star','2 star','2.5 star','3 star','3.5 star','4 star','4.5 star','5 star']
+
+
+fig = go.Figure(data=[go.Pie(labels=z, values=y, hole=.3)])
+
+fig.update_layout(title_text="Rating Distribution among total number of business")
+
+
+fig.show()
+
+----
+part 2
+
+
+# Hist only
+sns.distplot( a=DAPVisualsdf['stars'], hist=True, kde=False, rug=False )
+#sns.plt.show()
+
+
+------------------------
+#heatmap
+
+
+#get all ratings data
+rating_data=DAPVisualsdf[['latitude','longitude','stars','review_count']]
+# Creating a custom column popularity using stars*no_of_reviews
+rating_data['popularity']=rating_data['stars']*rating_data['review_count']
+
+
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(15,7))
+
+#a random point inside vegas
+lat = 36.207430
+lon = -115.268460
+#some adjustments to get the right pic
+lon_min, lon_max = lon-0.3,lon+0.5
+lat_min, lat_max = lat-0.4,lat+0.5
+#subset for vegas
+ratings_data_vegas=rating_data[(rating_data["longitude"]>lon_min) &\
+                    (rating_data["longitude"]<lon_max) &\
+                    (rating_data["latitude"]>lat_min) &\
+                    (rating_data["latitude"]<lat_max)]
+
+#Facet scatter plot
+ratings_data_vegas.plot(kind='scatter', x='longitude', y='latitude',
+                color='orange', 
+                s=.02, alpha=.6, subplots=True, ax=ax1)
+ax1.set_title("Las Vegas")
+ax1.set_facecolor('black')
+
+#a random point inside pheonix
+lat = 33.435463
+lon = -112.006989
+#some adjustments to get the right pic
+lon_min, lon_max = lon-0.3,lon+0.5
+lat_min, lat_max = lat-0.4,lat+0.5
+#subset for pheonix
+ratings_data_pheonix=rating_data[(rating_data["longitude"]>lon_min) &\
+                    (rating_data["longitude"]<lon_max) &\
+                    (rating_data["latitude"]>lat_min) &\
+                    (rating_data["latitude"]<lat_max)]
+#plot pheonix
+ratings_data_pheonix.plot(kind='scatter', x='longitude', y='latitude',
+                color='red', 
+                s=.02, alpha=.6, subplots=True, ax=ax2)
+ax2.set_title("Pheonix")
+ax2.set_facecolor('black')
+f.show()
